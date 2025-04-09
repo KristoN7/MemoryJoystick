@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.example.memoryjoystick"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.memoryjoystick"
@@ -68,17 +68,18 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
     // ViewModel i LiveData
-    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2"
-    implementation "androidx.lifecycle:lifecycle-livedata-ktx:2.6.2"
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.2")
 
     // Navigation Component
-    implementation "androidx.navigation:navigation-fragment-ktx:2.7.6"
-    implementation "androidx.navigation:navigation-ui-ktx:2.7.6"
+    implementation("androidx.navigation:navigation-fragment-ktx:2.7.6")
+    implementation("androidx.navigation:navigation-ui-ktx:2.7.6")
 
     // BLE (opcjonalnie)
-    implementation 'no.nordicsemi.android:ble:2.5.1'
+    implementation("no.nordicsemi.android:ble:2.5.1")
 
     // Firebase (opcjonalnie)
-    implementation platform("com.google.firebase:firebase-bom:32.7.1")
-    implementation "com.google.firebase:firebase-database-ktx"
+    implementation(platform("com.google.firebase:firebase-bom:32.7.1"))
+    implementation("com.google.firebase:firebase-database-ktx")
+
 }
