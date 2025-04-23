@@ -1,12 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    app:startDestination="@id/gameFragment">
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/mainFragment">
+
+    <fragment
+        android:id="@+id/mainFragment"
+        android:label="Main Fragment">
+        <action
+            android:id="@+id/action_to_gameFragment"
+            app:destination="@id/gameFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/gameFragment"
-        android:name="com.example.memoryjoystick.ui.GameFragment"
-        android:label="Game"
-        tools:layout="@layout/fragment_game" />
+        android:name="com.example.memoryjoystick.GameFragment"
+        android:label="Game Fragment" />
 </navigation>

@@ -1,31 +1,30 @@
 package com.example.memoryjoystick
 
 import android.os.Bundle
+import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.NavController
 import androidx.navigation.findNavController
-import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupActionBarWithNavController
 
 class MainActivity : AppCompatActivity() {
+
+    private lateinit var navController: NavController
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Znajdź NavHostFragment
-        val navHostFragment = supportFragmentManager
-            .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        navController = findNavController(R.id.fragment_container)
 
-        // Pobierz NavController z NavHostFragment
-        val navController = navHostFragment.navController
-
-        // Przypisz NavController do Activity
-        setupActionBarWithNavController(navController)
+        val startGameButton: Button = findViewById(R.id.startGameButton)
+        startGameButton.setOnClickListener {
+            // Nawigacja do fragmentu gry
+            navController.navigate(R.id.action_to_gameFragment)
+        }
     }
 
     override fun onSupportNavigateUp(): Boolean {
-        val navController = findNavController(R.id.nav_host_fragment)
         return navController.navigateUp() || super.onSupportNavigateUp()
     }
 }
