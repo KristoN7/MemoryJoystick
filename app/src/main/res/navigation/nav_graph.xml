@@ -6,6 +6,7 @@
 
     <fragment
         android:id="@+id/mainFragment"
+        android:name="com.example.memoryjoystick.MainFragment"
         android:label="Main Fragment">
         <action
             android:id="@+id/action_to_gameFragment"

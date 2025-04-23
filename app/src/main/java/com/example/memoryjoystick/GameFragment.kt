@@ -6,14 +6,16 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import com.example.memoryjoystick.R
+import androidx.lifecycle.ViewModelProvider
 import com.example.memoryjoystick.model.Card
-import com.example.memoryjoystick.model.generateCards
 import android.widget.GridLayout
 import android.widget.Button
+import com.example.memoryjoystick.viewmodel.GameViewModel
+import androidx.lifecycle.Observer
 
 class GameFragment : Fragment() {
 
+    private lateinit var gameViewModel: GameViewModel
     private var cards: List<Card> = emptyList()
 
     override fun onCreateView(
@@ -25,31 +27,39 @@ class GameFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-            super.onViewCreated(view, savedInstanceState)
-            Log.d("GameFragment", "Fragment załadowany")
+        super.onViewCreated(view, savedInstanceState)
+        Log.d("GameFragment", "Fragment załadowany")
 
-            cards = generateCards("medium")
-            Log.d("GameFragment", "Karty wygenerowane: ${cards.size}")
+        gameViewModel = ViewModelProvider(this).get(GameViewModel::class.java)
 
-            setupBoard(cards)
+        gameViewModel.cards.observe(viewLifecycleOwner, Observer { updatedCards ->
+            cards = updatedCards
+            setupBoard(updatedCards)
+        })
     }
 
     private fun setupBoard(cards: List<Card>) {
-        val gridLayout = view?.findViewById<GridLayout>(R.id.grid_layout)
-        gridLayout?.rowCount = 4
-        gridLayout?.columnCount = 4
+        val gridLayout = view?.findViewById<GridLayout>(R.id.grid_layout) ?: return
+        gridLayout.removeAllViews() // Usuń poprzednie widoki przy aktualizacji planszy
+
+        val numColumns = when (cards.size) {
+            8 -> 4
+            16 -> 4
+            32 -> 4 // Możesz dostosować liczbę kolumn w zależności od liczby kart
+            else -> 4
+        }
+        gridLayout.columnCount = numColumns
+        gridLayout.rowCount = cards.size / numColumns // Automatycznie oblicz liczbę wierszy
 
         cards.forEach { card ->
-            val button = Button(requireContext())
-            button.setBackgroundResource(R.drawable.card_back)  // Ustawiamy tylne strony kart
-            button.setOnClickListener {
-                onCardClicked(card, button)
+            val button = Button(requireContext()).apply {
+                setBackgroundResource(if (card.isFaceUp) card.imageResId else R.drawable.card_back)
+                isEnabled = !card.isMatched
+                setOnClickListener {
+                    gameViewModel.cardClicked(card)
+                }
             }
-            gridLayout?.addView(button)
+            gridLayout.addView(button)
         }
-    }
-
-    private fun onCardClicked(card: Card, button: Button) {
-        // Logika odkrywania kart
     }
 }
