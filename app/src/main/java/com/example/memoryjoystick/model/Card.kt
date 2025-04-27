@@ -4,7 +4,7 @@ import com.example.memoryjoystick.R
 
 // Klasa reprezentująca kartę
 data class Card(
-    val id: Int,           // Unikalny identyfikator karty
+    val id: Long = System.nanoTime(), // Unikalny identyfikator karty (generowany w momencie tworzenia)
     val imageResId: Int,   // Id obrazu z drawable
     var isFaceUp: Boolean = false,   // Stan karty (odkryta/zakryta)
     var isMatched: Boolean = false  // Sprawdzenie, czy para została dopasowana
@@ -28,8 +28,9 @@ fun generateCards(level: String): List<Card> {
 
     // Tworzymy pary kart
     for (i in 0 until numPairs) {
-        cards.add(Card(i, cardImages[i % cardImages.size]))
-        cards.add(Card(i + numPairs, cardImages[i % cardImages.size]))
+        val image = cardImages[i % cardImages.size]
+        cards.add(Card(imageResId = image))
+        cards.add(Card(imageResId = image))
     }
 
     // Mieszamy karty

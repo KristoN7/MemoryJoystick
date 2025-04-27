@@ -3,13 +3,24 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.example.memoryjoystick">
 
+    <!-- Bluetooth permissions for Android <= 11 -->
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" android:required="false" />
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" android:required="false" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:required="true" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" android:required="true" />
 
+    <!-- Bluetooth permissions for Android 12+ -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_CONNECT"
+        android:required="false"
+        tools:targetApi="31" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN"
+        android:required="false"
+        android:usesPermissionFlags="neverForLocation"
+        tools:targetApi="31" />
+
+    <!-- Location permissions (for BLE scan on Android <= 11) -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
         android:allowBackup="true"
@@ -21,6 +32,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.DayNight"
         tools:targetApi="31">
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -30,6 +42,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
     </application>
 
 </manifest>

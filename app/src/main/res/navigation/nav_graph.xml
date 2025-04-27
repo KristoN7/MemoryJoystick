@@ -2,19 +2,34 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/mainFragment">
+    app:startDestination="@id/difficultyFragment">
+
+    <fragment
+        android:id="@+id/difficultyFragment"
+        android:name="com.example.memoryjoystick.DifficultyFragment"
+        android:label="DifficultyFragment" >
+        <action
+            android:id="@+id/action_difficultyFragment_to_gameFragment"
+            app:destination="@id/gameFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/mainFragment"
         android:name="com.example.memoryjoystick.MainFragment"
-        android:label="Main Fragment">
+        android:label="Main Fragment" >
         <action
-            android:id="@+id/action_to_gameFragment"
+            android:id="@+id/action_mainFragment_to_gameFragment"
             app:destination="@id/gameFragment" />
     </fragment>
 
     <fragment
         android:id="@+id/gameFragment"
         android:name="com.example.memoryjoystick.GameFragment"
-        android:label="Game Fragment" />
+        android:label="Game Fragment">
+        <argument
+            android:name="numberOfCards"
+            android:defaultValue="0"
+            app:argType="integer" />
+    </fragment>
+
 </navigation>

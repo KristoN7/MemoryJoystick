@@ -28,16 +28,14 @@ class BleDeviceAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val device = devices[position]
-        if (ActivityCompat.checkSelfPermission(
-                holder.itemView.context,
-                Manifest.permission.BLUETOOTH_CONNECT
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
+        val context = holder.itemView.context
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
             holder.deviceNameTextView.text = device.device.name ?: "Nazwa nieznana"
+            holder.deviceAddressTextView.text = device.device.address
         } else {
-            holder.deviceNameTextView.text = "Nazwa niedostępna"
+            holder.deviceNameTextView.text = "Informacje niedostępne"
+            holder.deviceAddressTextView.text = "Informacje niedostępne"
         }
-        holder.deviceAddressTextView.text = device.device.address
         holder.itemView.setOnClickListener { onDeviceClickListener(device) }
     }
 
