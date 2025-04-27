@@ -15,7 +15,6 @@ class DifficultyFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         return inflater.inflate(R.layout.fragment_difficulty, container, false)
-        Log.d("DifficultyFragment", "onCreateView")
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

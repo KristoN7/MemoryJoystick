@@ -1,29 +1,39 @@
 package com.example.memoryjoystick.viewmodel
 
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.memoryjoystick.model.Card
 import com.example.memoryjoystick.model.generateCards
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import androidx.lifecycle.viewModelScope
 
 class GameViewModel : ViewModel() {
     private val _cards = MutableLiveData<List<Card>>()
     val cards: LiveData<List<Card>> = _cards
+    private val _elapsedTime = MutableLiveData<Long>(0)
+    val elapsedTime: LiveData<Long> = _elapsedTime
+
+    private var firstCardTime: Long = 0
+    private var gameOver = MutableLiveData<Boolean>(false)
+    private var numberOfCards: Int = 8 // Domyślna liczba kart
     val connectedDeviceAddress = MutableLiveData<String>()
-    val joystickAction = MutableLiveData<Int>()
 
-    private val _selectedCards = MutableLiveData<List<Card>>(emptyList())
-    val selectedCards: LiveData<List<Card>> = _selectedCards
 
+    private var isProcessingTurn = false
+    private var firstSelectedCard: Card? = null
+    private var secondSelectedCard: Card? = null
     private val _selectedCardIndex = MutableLiveData<Int>(0)
     val selectedCardIndex: LiveData<Int> = _selectedCardIndex
+    val joystickAction = MutableLiveData<Int>() // Zachowujemy Int
 
-    private var numberOfCards: Int = 8 // Domyślna liczba kart
-    private var canClick = true
+    // Flag to check if timer has started
+    private var timerStarted = false
 
     fun setNumberOfCards(count: Int) {
         numberOfCards = count
@@ -32,120 +42,146 @@ class GameViewModel : ViewModel() {
     }
 
     private fun generateNewCards() {
+        resetTimer()
+
         val level = when (numberOfCards) {
             8 -> "easy"
             16 -> "medium"
             32 -> "hard"
             else -> "easy"
         }
-        _cards.value = generateCards(level)
-        _selectedCardIndex.value = 0
+        _cards.value = generateCards(numberOfCards)
     }
 
-    fun cardClicked(card: Card) {
-        if (!canClick) return
+    fun resetTimer() {
+        _elapsedTime.value = 0
+        firstCardTime = 0
+        timerStarted = false
+        gameOver.value = false
+    }
 
-        val currentSelected = _selectedCards.value ?: emptyList()
-
-        if (card.isFaceUp || card.isMatched) {
+    fun handleJoystickAction(action: Byte) {
+        Log.d("GameViewModel", "Karty zostały wygenerowane, liczba kart: ${_cards.value?.size}")
+        val currentCards = _cards.value
+        val currentSize = currentCards?.size ?: 0
+        if (currentSize == 0) {
+            Log.d("JOYSTICK_ACTION", "Karty nie zostały załadowane.")
             return
         }
 
-        val mutableSelected = currentSelected.toMutableList()
-        mutableSelected.add(card)
-        _selectedCards.value = mutableSelected
 
-        val currentCards = _cards.value?.toMutableList() ?: return
-        val index = currentCards.indexOf(card)
-        if (index != -1) {
-            currentCards[index] = card.copy(isFaceUp = true)
-            _cards.value = currentCards
-        }
-
-        if (mutableSelected.size == 2) {
-            canClick = false
-            if (mutableSelected[0].imageResId == mutableSelected[1].imageResId) {
-                markCardsAsMatched(mutableSelected[0], mutableSelected[1])
-                _selectedCards.value = emptyList()
-                canClick = true
-            } else {
-                viewModelScope.launch {
-                    delay(1000)
-                    resetSelectedCards()
-                    canClick = true
-                }
-            }
-        } else if (mutableSelected.size > 2) {
-            resetSelectedCards()
-            cardClicked(card)
-        }
-    }
-
-    private fun markCardsAsMatched(card1: Card, card2: Card) {
-        val currentCards = _cards.value?.toMutableList() ?: return
-        val index1 = currentCards.indexOf(card1)
-        val index2 = currentCards.indexOf(card2)
-        if (index1 != -1 && index2 != -1) {
-            currentCards[index1] = currentCards[index1].copy(isMatched = true)
-            currentCards[index2] = currentCards[index2].copy(isMatched = true)
-            _cards.value = currentCards
-        }
-    }
-
-    private fun resetSelectedCards() {
-        val currentCards = _cards.value?.toMutableList() ?: return
-        val selectedAndNotMatched = _selectedCards.value?.filter { !it.isMatched } ?: emptyList()
-
-        selectedAndNotMatched.forEach { card ->
-            val index = currentCards.indexOf(card)
-            if (index != -1) {
-                currentCards[index] = currentCards[index].copy(isFaceUp = false)
-            }
-        }
-        _cards.value = currentCards
-        _selectedCards.value = emptyList()
-    }
-
-    fun handleJoystickAction(action: Int) {
-        val currentSize = _cards.value?.size ?: 0
-        if (currentSize == 0) return
-
-        when (action) {
+        when (action.toInt()) {
             1 -> { // LEFT
-                _selectedCardIndex.value = (_selectedCardIndex.value!! - 1 + currentSize) % currentSize
+                _selectedCardIndex.value =
+                    (_selectedCardIndex.value!! - 1 + currentSize) % currentSize
+                Log.d(
+                    "JOYSTICK_MOVE",
+                    "Przesunięto w lewo, nowy indeks: ${_selectedCardIndex.value}"
+                )
             }
+
             2 -> { // DOWN
-                // Logika ruchu w dół (uwzględnij liczbę kolumn)
-                val numColumns = 4 // Założona liczba kolumn
+                val numColumns = when (currentSize) {
+                    8 -> 4
+                    16 -> 4
+                    32 -> 6
+                    else -> 4
+                }
                 _selectedCardIndex.value = (_selectedCardIndex.value!! + numColumns) % currentSize
+                Log.d(
+                    "JOYSTICK_MOVE",
+                    "Przesunięto w dół, nowy indeks: ${_selectedCardIndex.value}"
+                )
             }
+
             3 -> { // RIGHT
                 _selectedCardIndex.value = (_selectedCardIndex.value!! + 1) % currentSize
+                Log.d(
+                    "JOYSTICK_MOVE",
+                    "Przesunięto w prawo, nowy indeks: ${_selectedCardIndex.value}"
+                )
             }
+
             4 -> { // INTERACT
-                // Wybierz kartę na aktualnym indeksie
-                _cards.value?.getOrNull(_selectedCardIndex.value!!)?.let { card ->
-                    cardClicked(card)
-                }
+                _cards.value?.getOrNull(_selectedCardIndex.value!!)
+                    ?.let { card -> cardClicked(card) }
+                Log.d("JOYSTICK_ACTION", "Akcja SELEKCJA na indeksie: ${_selectedCardIndex.value}")
             }
-            // Możliwa akcja UP
-            // 5 -> { // UP
-            //     val numColumns = 4 // Założona liczba kolumn
-            //     _selectedCardIndex.value = (_selectedCardIndex.value!! - numColumns + currentSize) % currentSize
-            // }
+
             else -> Log.d("ViewModel", "Nieznana akcja dżojstika: $action")
         }
     }
 
-    // Metoda do "wybrania" karty za pomocą dżojstika (odpowiednik kliknięcia)
-    fun cardSelected(index: Int) {
-        _cards.value?.getOrNull(index)?.let { card ->
-            cardClicked(card)
+
+    fun cardClicked(card: Card) {
+        if (isProcessingTurn) return
+        if (card.isFaceUp || card.isMatched) return
+
+        if (!timerStarted) {
+            startTimer()
+            timerStarted = true
+        }
+
+        card.isFaceUp = true
+        _cards.postValue(_cards.value)
+
+        if (firstSelectedCard == null) {
+            firstSelectedCard = card
+        } else if (secondSelectedCard == null) {
+            secondSelectedCard = card
+            isProcessingTurn = true
+
+            if (firstSelectedCard?.imageResId == secondSelectedCard?.imageResId) {
+                firstSelectedCard?.isMatched = true
+                secondSelectedCard?.isMatched = true
+
+                firstSelectedCard = null
+                secondSelectedCard = null
+                isProcessingTurn = false
+                _cards.postValue(_cards.value)
+
+                checkGameOver()
+            } else {
+                Handler(Looper.getMainLooper()).postDelayed({
+                    //Zakrywanie karty po 2 sekundach, jeśli się nie dopasowały
+                    firstSelectedCard?.isFaceUp = false
+                    secondSelectedCard?.isFaceUp = false
+
+                    firstSelectedCard = null
+                    secondSelectedCard = null
+                    isProcessingTurn = false
+                    _cards.postValue(_cards.value)
+                }, 2000)
+            }
         }
     }
 
-    // Metoda do aktualizacji zaznaczonego indeksu (może być potrzebne, jeśli UI zainicjuje zaznaczenie)
-    fun setSelectedCardIndex(index: Int) {
-        _selectedCardIndex.value = index
+    private fun checkGameOver() {
+        if (_cards.value?.all { it.isMatched } == true) {
+            gameOver.value = true
+            stopTimer()
+        }
+    }
+
+    private fun startTimer() {
+        firstCardTime = SystemClock.elapsedRealtime()
+        viewModelScope.launch {
+            while (!gameOver.value!!) {
+                _elapsedTime.value = SystemClock.elapsedRealtime() - firstCardTime
+                delay(1000)
+            }
+        }
+    }
+
+    fun isGameOver(): LiveData<Boolean> {
+        return gameOver
+    }
+
+    private fun stopTimer() {
+        _elapsedTime.value = SystemClock.elapsedRealtime() - firstCardTime
+    }
+
+    fun updateCards(cards: List<Card>) {
+        _cards.value = cards
     }
 }

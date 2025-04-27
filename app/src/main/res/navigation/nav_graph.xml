@@ -2,7 +2,7 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/difficultyFragment">
+    app:startDestination="@id/mainFragment">
 
     <fragment
         android:id="@+id/difficultyFragment"
@@ -18,8 +18,8 @@
         android:name="com.example.memoryjoystick.MainFragment"
         android:label="Main Fragment" >
         <action
-            android:id="@+id/action_mainFragment_to_gameFragment"
-            app:destination="@id/gameFragment" />
+            android:id="@+id/action_mainFragment_to_difficultyFragment"
+            app:destination="@id/difficultyFragment" />
     </fragment>
 
     <fragment
